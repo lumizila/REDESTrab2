@@ -1,17 +1,19 @@
-###Implementar um jogo de batalha naval de 4 jogadores
-####Em python usando Socket Datagram
-####Imprementar o controle de acesso de passagem de bastao
+### Implementar um jogo de batalha naval de 4 jogadores
+#### Em python usando Socket Datagram
+#### Imprementar o controle de acesso de passagem de bastao
 
 - O relatorio eh obrigatorio
 - Valor: 1,0
 - Apresentacoes no lab
 - Codigo por email depois da apresentacao
 
-###Detalhes sobre a implementacao
+### Detalhes sobre a implementacao
 
 Podem ser parametros, e em caso negativo:
 - Tabuleiro 5x5
 - 2 navios 3x1
+
+#### Outros detalhes
 
 - Inicio: jogadores distribuem seus navios pelo tabuleiro 
 - Jogador com bastao escolhe um openente e uma area pra atacar, cria e envia a mensagem
