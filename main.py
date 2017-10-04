@@ -6,7 +6,7 @@ import math
 def imprimeTabuleiro(tabuleiro, tamanho):
 	for x in range(tamanho):
 		for y in range(tamanho):
-			sys.stdout.write(str(tabuleiro[x*tamanho+y])+" ")
+			sys.stdout.write(tabuleiro[x*tamanho+y]+" ")
 		print("")
 	return
 
@@ -14,12 +14,28 @@ def imprimeTabuleiro(tabuleiro, tamanho):
 def iniciaTabuleiro(tabuleiro, tamanho):
 	for x in range(tamanho):
 		for y in range(tamanho):
-			tabuleiro.append(0)
+			tabuleiro.append("-")
 	return
 
 #adiciona navio ao tabuleiro
-def adicionaNavio(x1, y1, x2, y2, tabuleiro, tam)
-	
+def adicionaNavio(x1, y1, x2, y2, tabuleiro, tamanho):
+	if(x1 < x2):
+		for x in range(x1, x2+1):
+			if(y1 < y2):
+				for y in range(y1, y2+1):
+					tabuleiro[x*tamanho+y] = "X"
+			else:
+				for y in range(y2, y1+1):
+					tabuleiro[x*tamanho+y] = "X"
+	else:
+		for x in range(x2, x1+1):
+			if(y1 < y2):
+				for y in range(y1, y2+1):
+					tabuleiro[x*tamanho+y] = "X"
+			else:
+				for y in range(y2, y1+1):
+					tabuleiro[x*tamanho+y] = "X"
+
 
 
 print ("inicio do programa...")
@@ -51,7 +67,7 @@ for navio in range(num_navios):
 		y2 = input("Em qual posicao y o navio termina? Digite um numero de 0 a "+str(tam_tabuleiro-1)+"\n");	
 		if((x1 >= 0) and (x1 < tam_tabuleiro) and (x2 >= 0) and (x2 < tam_tabuleiro) and (y1 >=0) and (y1 <= tam_tabuleiro) and (y2 >= 0) and (y2 <= tam_tabuleiro)):
 			if(((math.fabs(y1-y2) != tam) and (math.fabs(x1-x2) != 0)) != ((math.fabs(y1-y2) != 0) and (math.fabs(x1-x2) != tam))):
-				adicionaNavio(x1, y1, x2, y2, tabuleiro, tam)
+				adicionaNavio(x1, y1, x2, y2, tabuleiro, tam_tabuleiro)
 				imprimeTabuleiro(tabuleiro, tam_tabuleiro)
 				break
 		print("O tamanho do navio nao corresponde as posicoes escolhidas ou as posicoes nao respeitam o tabuleiro");
