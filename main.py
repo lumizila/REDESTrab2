@@ -5,7 +5,13 @@ import socket
 
 #imprime o tabuleiro
 def imprimeTabuleiro(tabuleiro, tamanho):
+	sys.stdout.write("_| ");
+	for aux in range(tamanho):
+		sys.stdout.write(str(aux)+" ")
+	print("")	
+
 	for x in range(tamanho):
+		sys.stdout.write(str(x)+"| ")
 		for y in range(tamanho):
 			sys.stdout.write(tabuleiro[x*tamanho+y]+" ")
 		print("")
@@ -36,6 +42,7 @@ def adicionaNavio(x1, y1, x2, y2, tabuleiro, tamanho):
 			else:
 				for y in range(y2, y1+1):
 					tabuleiro[x*tamanho+y] = "X"
+	return
 
 def enviaAtaque(sock, udp_port, udp_ip):
 	jogador = input("Qual jogador voce quer atacar?")
@@ -44,6 +51,7 @@ def enviaAtaque(sock, udp_port, udp_ip):
 	#TODO empacota e envia mensagem de ataque
 	mensagem = "mudar"
 	sock.sendto(mensagem, (udp_ip, udp_port))
+	return
 
 print ("inicio do programa...")
 #TODO como implementar timeout ?
@@ -65,9 +73,9 @@ iniciaTabuleiro(tabuleiro, tam_tabuleiro);
 for navio in range(num_navios):
 	while True:
 		tam = input("Este eh o navio de numero "+str(navio)+", qual o tamanho dele?\n")
-		if (tam <= tam_tabuleiro):
+		if (tam <= tam_tabuleiro and tam > 0):
 			break
-		print("o tamanho do navio eh maior que o tamanho do tabuleiro")
+		print("o tamanho do navio eh maior que o tamanho do tabuleiro ou eh < 1")
 
 	tam_navio.append(tam)
 	
@@ -89,9 +97,9 @@ for navio in range(num_navios):
 		print("O tamanho do navio nao corresponde as posicoes escolhidas ou as posicoes nao respeitam o tabuleiro");
 		
 udp_port = input("Qual sera o port utilizado?\n")
-udp_ip1 = input("Qual o IP desta maquina?\n")
-udp_ip2 = input("Qual o IP da proxima maquina?\n") 
-udp_ip3 = input("Qual o IP da maquina anterior?\n")
+udp_ip1 = raw_input("Qual o IP desta maquina?\n")
+udp_ip2 = raw_input("Qual o IP da proxima maquina?\n") 
+udp_ip3 = raw_input("Qual o IP da maquina anterior?\n")
 
 #Conecta socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -99,7 +107,7 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind((udp_ip3, udp_port))
 
 #Se for o primeiro a jogar, envia primeiro ataque
-if(ordem == "1"):
+if(ordem == 1):
 	enviaAtaque(sock, udp_port, udp_ip2)
 
 #loop de aguardo de mensagem
@@ -107,7 +115,7 @@ while True:
 	#Recebe mensagem
 	mensagem, addr = sock.recvfrom(TAM_MSG)
 	#TODO tirar esse print daqui depois
-	print ("a mensagem recebida foi: "+mensagem)
+	print ("a mensagem recebida foi: " + mensagem)
 		#Se mensagem eh bastao, realiza/envia ataque e repassa bastao
 		#Se mensagem eh para este jogador
 			#Se ataque acertou um navio nao-completamente ou errou, 
