@@ -27,7 +27,10 @@ Podem ser parametros, e em caso negativo:
 
 #### Maquinas para conectar
 
+Para ver o IP de uma maquina, digitar o comando: ```ifconfig```
+
 Para este trabalho, vamos ter que conectar em 4 maquinas diferentes, que podem ser:
+
 -macalan
 -dalmore
 -
