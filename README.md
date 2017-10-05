@@ -24,3 +24,14 @@ Podem ser parametros, e em caso negativo:
 - Bastao nao eh temporizado
 - Deve ter timeout na mensagem
 - Jogador com tudo afundado para de jogar
+
+#### Maquinas para conectar
+
+Para este trabalho, vamos ter que conectar em 4 maquinas diferentes, que podem ser:
+-macalan
+-dalmore
+-
+-
+
+A porta usada pode ser a: 5318
+
