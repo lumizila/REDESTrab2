@@ -104,7 +104,7 @@ udp_ip3 = raw_input("Qual o IP da maquina anterior?\n")
 #Conecta socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 #Liga o socket com a maquina que vai enviar para esta
-sock.bind(('127.0.0.1', udp_port))
+sock.bind(('', udp_port))
 
 #Se for o primeiro a jogar, envia primeiro ataque
 if(ordem == 1):
