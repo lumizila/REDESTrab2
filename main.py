@@ -44,15 +44,18 @@ def adicionaNavio(x1, y1, x2, y2, tabuleiro, tamanho, navio):
 					tabuleiro[x*tamanho+y] = "n"+str(navio)
 	return
 
-def enviaAtaque(sock, udp_port, udp_ip, atacante):
+def geraAtaque(atacante):
 	jogador = input("Qual jogador voce quer atacar?")
 	x = input("Qual a posicao x que voce quer atacar?")
 	y = input("Qual a posicao y que voce quer atacar?")
-	# Empacota e envia mensagem de ataque
+	# Empacota mensagem de ataque
 	# O 1 representa ataque, o atacante eh este jogador, 
 	# o 'jogador' eh o atacado, x e y sao as posicoes do ataque
 	mensagem = "1_"+atacante+"_"+jogador+"_"+x+"_"+y
-	sock.sendto(mensagem, (udp_ip, udp_port))
+	return mensagem
+
+def enviaMensagem(mensagens, sock, udp_ip, udp_port):
+	sock.sendto(mensagens, (udp_ip, udp_port))
 	return
 
 print ("inicio do programa...")
@@ -109,40 +112,48 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 #Liga o socket com a maquina que vai enviar para esta
 sock.bind(('', udp_port))
 
+#Lista de mensagens a enviar no anel
+mensagens = []
+
 #Se for o primeiro a jogar, envia primeiro ataque
 if(ordem == 1):
-	enviaAtaque(sock, udp_port, udp_ip2, ordem)
-	repassaBastao(sock, udp_port, udp_ip2)
+	#Adicionando bastao as mensagens
+	mensagensEnviar.append("9_9_9_9_9")
+	mensagensEnviar.append(geraAtaque(ordem))
+	enviaMensagem(mensagensEnviar, sock, udp_ip2, udp_port)
 
 #loop de aguardo de mensagem
 while True:
-	#Recebe mensagem
-	mensagem, addr = sock.recvfrom(TAM_MSG)
-	if(addr != udp_ip3):
-		print ("a mensagem recebida foi: " + mensagem)
-		#Dividindo a mensagem em partes
-		partes = mensagem.split("_")
+	#Recebe mensagens
+	mensagensRec, addr = sock.recvfrom(TAM_MSG)
+	if(addr == udp_ip3):
+		#Iterando pelas mensagens
+		for msg in mensagensRec:
+			print ("a mensagem recebida foi: " + msg)
+			#Dividindo cada parte da mensagem
+			partes = msg.split("_")
+			print(partes)
+			#Se mensagem eh para este jogador
+				#Se ataque acertou um navio nao-completamente ou errou, 
+					#Retira mensagem recebida e adiciona resultado ao atacante as msgs
+				#Se afundou navio completamente, 
+					#Retira mensagem recebida e adiciona resultado ao atacante as msgs
+				#Se todos os navios afundaram, 
+					#Retira mensagem recebida e avisa que perdeu ao atacante e sai do jogo(e do loop)
+			
+			#Se mensagem eh aberta: aviso de que afundou navio de outro jogador
+			#(e/ou saiu do jogo) que nao foi atacado por este,
+				#le e repassa mensagem			
 
-		#Se mensagem eh bastao, o primeiro elemento sera 0, realiza/envia ataque e repassa bastao
-		if(partes[0] == 0):
-			enviaAtaque(sock, udp_port, udp_ip2, ordem)
-			repassaBastao(sock, udp_port, udp_ip2)
+			#Se mensagem foi enviada por este mesmo jogador
+				#Se mensagem eh aviso de que afundou navio do atacado ou que atacado saiu do jogo, 
+					#retira mensagem, cria mensagem aberta a todos e envia mensagem
+				#Se foi mensagem aberta de navio afundado ou jogador saiu do jogo de outro jogador, 
+					#retira mensagem do anel
+				#Se foi mensagem de ataque, ERRO, a mensagem nao chegou ao remetente
+				#Se foi mensagem de que atacante acertou este jogador, ERRO, a msg nao chegou no remetente
+			#Se mensagem nao eh para este nem enviada por este, repassa para frente
 		
-		#Se mensagem eh para este jogador
-			#Se ataque acertou um navio nao-completamente ou errou, 
-				#Retira mensagem recebida e envia resultado ao atacante
-			#Se afundou navio completamente, 
-				#Retira mensagem recebida e envia resultado ao atacante
-			#Se todos os navios afundaram, 
-				#Retira mensagem recebida e avisa que perdeu ao atacante e sai do jogo(e do loop)
-			#Se mensagem eh aviso de que afundou navio de outro jogador que nao foi atacado por este,
-				#le e repassa mensagem
-			#Se mensagem eh aviso de que afundou navio do atacado ou que atacado saiu do jogo, 
-				#retira mensagem, cria mensagem aberta a todos e envia mensagem
-		#Se mensagem foi enviada por este mesmo jogador
-			#Se foi mensagem aberta de navio afundado ou jogador saiu do jogo de outro jogador, 
-				#retira mensagem do anel
-			#Se foi mensagem de ataque, ERRO, a mensagem nao chegou ao remetente
-			#Se foi mensagem de que atacante acertou este jogador, ERRO, a msg nao chegou no remetente
-		#Se mensagem nao eh para este nem enviada por este, repassa para frente
-		
+			#Se mensagem eh bastao, o primeiro elemento sera 9, realiza ataque
+
+		# repassa bastao com mensagens
