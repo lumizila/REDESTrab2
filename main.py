@@ -62,39 +62,39 @@ TAM_MSG = 1024
 ordem = input("Qual eh a ordem que voce vai jogar? Responder: 1, 2, 3 ou 4\n")
 
 #Le posicoes dos navios e quantidade deles
-num_navios = input("Quantos navios voce tera?\n")
-tam_tabuleiro = input("Qual o tamanho do tabuleiro?\n")
+#num_navios = input("Quantos navios voce tera?\n")
+#tam_tabuleiro = input("Qual o tamanho do tabuleiro?\n")
 
-tam_navio = []
-tabuleiro = []
+#tam_navio = []
+#tabuleiro = []
 
-iniciaTabuleiro(tabuleiro, tam_tabuleiro);
+#iniciaTabuleiro(tabuleiro, tam_tabuleiro);
 
-for navio in range(num_navios):
-	while True:
-		tam = input("Este eh o navio de numero "+str(navio)+", qual o tamanho dele?\n")
-		if (tam <= tam_tabuleiro and tam > 0):
-			break
-		print("o tamanho do navio eh maior que o tamanho do tabuleiro ou eh < 1")
+#for navio in range(num_navios):
+#	while True:
+#		tam = input("Este eh o navio de numero "+str(navio)+", qual o tamanho dele?\n")
+#		if (tam <= tam_tabuleiro and tam > 0):
+#			break
+#		print("o tamanho do navio eh maior que o tamanho do tabuleiro ou eh < 1")
 
-	tam_navio.append(tam)
+#	tam_navio.append(tam)
 	
-	while True:
-		x1 = input("Em qual posicao x o navio comeca? Digite um numero de 0 a "+str(tam_tabuleiro-1)+"\n");		
-		y1 = input("Em qual posicao y o navio comeca? Digite um numero de 0 a "+str(tam_tabuleiro-1)+"\n");	
-		x2 = input("Em qual posicao x o navio termina? Digite um numero de 0 a "+str(tam_tabuleiro-1)+"\n");		
-		y2 = input("Em qual posicao y o navio termina? Digite um numero de 0 a "+str(tam_tabuleiro-1)+"\n");
+#	while True:
+#		x1 = input("Em qual posicao x o navio comeca? Digite um numero de 0 a "+str(tam_tabuleiro-1)+"\n");		
+#		y1 = input("Em qual posicao y o navio comeca? Digite um numero de 0 a "+str(tam_tabuleiro-1)+"\n");	
+#		x2 = input("Em qual posicao x o navio termina? Digite um numero de 0 a "+str(tam_tabuleiro-1)+"\n");		
+#		y2 = input("Em qual posicao y o navio termina? Digite um numero de 0 a "+str(tam_tabuleiro-1)+"\n");
 		
 		#TODO conferir se essa posicao vai se sobrepor a outro navio
 
 		#conferindo se navio fica dentro do tabuleiro
-		if((x1 >= 0) and (x1 < tam_tabuleiro) and (x2 >= 0) and (x2 < tam_tabuleiro) and (y1 >=0) and (y1 <= tam_tabuleiro) and (y2 >= 0) and (y2 <= tam_tabuleiro)):
+#		if((x1 >= 0) and (x1 < tam_tabuleiro) and (x2 >= 0) and (x2 < tam_tabuleiro) and (y1 >=0) and (y1 <= tam_tabuleiro) and (y2 >= 0) and (y2 <= tam_tabuleiro)):
 			#conferindo se tamanho do navio realmente eh do tamanho escolhido
-			if(((math.fabs(y1-y2) != tam) and (math.fabs(x1-x2) != 0)) != ((math.fabs(y1-y2) != 0) and (math.fabs(x1-x2) != tam))):
-				adicionaNavio(x1, y1, x2, y2, tabuleiro, tam_tabuleiro)
-				imprimeTabuleiro(tabuleiro, tam_tabuleiro)
-				break
-		print("O tamanho do navio nao corresponde as posicoes escolhidas ou as posicoes nao respeitam o tabuleiro");
+#			if(((math.fabs(y1-y2) != tam) and (math.fabs(x1-x2) != 0)) != ((math.fabs(y1-y2) != 0) and (math.fabs(x1-x2) != tam))):
+#				adicionaNavio(x1, y1, x2, y2, tabuleiro, tam_tabuleiro)
+#				imprimeTabuleiro(tabuleiro, tam_tabuleiro)
+#				break
+#		print("O tamanho do navio nao corresponde as posicoes escolhidas ou as posicoes nao respeitam o tabuleiro");
 		
 udp_port = input("Qual sera o port utilizado?\n")
 udp_ip1 = raw_input("Qual o IP desta maquina?\n")
@@ -104,7 +104,7 @@ udp_ip3 = raw_input("Qual o IP da maquina anterior?\n")
 #Conecta socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 #Liga o socket com a maquina que vai enviar para esta
-sock.bind((udp_ip3, udp_port))
+sock.bind(('127.0.0.1', udp_port))
 
 #Se for o primeiro a jogar, envia primeiro ataque
 if(ordem == 1):
