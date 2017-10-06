@@ -7,7 +7,7 @@ import socket
 def imprimeTabuleiro(tabuleiro, tamanho):
 	sys.stdout.write("_| ");
 	for aux in range(tamanho):
-		sys.stdout.write(str(aux)+" ")
+		sys.stdout.write(str(aux)+"  ")
 	print("")	
 
 	for x in range(tamanho):
@@ -21,35 +21,37 @@ def imprimeTabuleiro(tabuleiro, tamanho):
 def iniciaTabuleiro(tabuleiro, tamanho):
 	for x in range(tamanho):
 		for y in range(tamanho):
-			tabuleiro.append("-")
+			tabuleiro.append("--")
 	return
 
 #adiciona navio ao tabuleiro
-def adicionaNavio(x1, y1, x2, y2, tabuleiro, tamanho):
+def adicionaNavio(x1, y1, x2, y2, tabuleiro, tamanho, navio):
 	if(x1 < x2):
 		for x in range(x1, x2+1):
 			if(y1 < y2):
 				for y in range(y1, y2+1):
-					tabuleiro[x*tamanho+y] = "X"
+					tabuleiro[x*tamanho+y] = "n"+str(navio)
 			else:
 				for y in range(y2, y1+1):
-					tabuleiro[x*tamanho+y] = "X"
+					tabuleiro[x*tamanho+y] = "n"+str(navio)
 	else:
 		for x in range(x2, x1+1):
 			if(y1 < y2):
 				for y in range(y1, y2+1):
-					tabuleiro[x*tamanho+y] = "X"
+					tabuleiro[x*tamanho+y] = "n"+str(navio)
 			else:
 				for y in range(y2, y1+1):
-					tabuleiro[x*tamanho+y] = "X"
+					tabuleiro[x*tamanho+y] = "n"+str(navio)
 	return
 
-def enviaAtaque(sock, udp_port, udp_ip):
+def enviaAtaque(sock, udp_port, udp_ip, atacante):
 	jogador = input("Qual jogador voce quer atacar?")
 	x = input("Qual a posicao x que voce quer atacar?")
 	y = input("Qual a posicao y que voce quer atacar?")
-	#TODO empacota e envia mensagem de ataque
-	mensagem = "mudar"
+	# Empacota e envia mensagem de ataque
+	# O 1 representa ataque, o atacante eh este jogador, 
+	# o 'jogador' eh o atacado, x e y sao as posicoes do ataque
+	mensagem = "1_"+atacante+"_"+jogador+"_"+x+"_"+y
 	sock.sendto(mensagem, (udp_ip, udp_port))
 	return
 
@@ -61,40 +63,41 @@ TAM_MSG = 1024
 #Pergunta a ordem que esse jogador vai jogar (se eh o primeiro ou nao)
 ordem = input("Qual eh a ordem que voce vai jogar? Responder: 1, 2, 3 ou 4\n")
 
+tam_tabuleiro = input("Qual o tamanho do tabuleiro?\n")
+
 #Le posicoes dos navios e quantidade deles
-#num_navios = input("Quantos navios voce tera?\n")
-#tam_tabuleiro = input("Qual o tamanho do tabuleiro?\n")
+num_navios = input("Quantos navios voce tera?\n")
 
-#tam_navio = []
-#tabuleiro = []
+tam_navio = []
+tabuleiro = []
 
-#iniciaTabuleiro(tabuleiro, tam_tabuleiro);
+iniciaTabuleiro(tabuleiro, tam_tabuleiro);
 
-#for navio in range(num_navios):
-#	while True:
-#		tam = input("Este eh o navio de numero "+str(navio)+", qual o tamanho dele?\n")
-#		if (tam <= tam_tabuleiro and tam > 0):
-#			break
-#		print("o tamanho do navio eh maior que o tamanho do tabuleiro ou eh < 1")
+for navio in range(num_navios):
+	while True:
+		tam = input("Este eh o navio de numero "+str(navio)+", qual o tamanho dele?\n")
+		if (tam <= tam_tabuleiro and tam > 0):
+			break
+		print("o tamanho do navio eh maior que o tamanho do tabuleiro ou eh < 1")
 
-#	tam_navio.append(tam)
+	tam_navio.append(tam)
 	
-#	while True:
-#		x1 = input("Em qual posicao x o navio comeca? Digite um numero de 0 a "+str(tam_tabuleiro-1)+"\n");		
-#		y1 = input("Em qual posicao y o navio comeca? Digite um numero de 0 a "+str(tam_tabuleiro-1)+"\n");	
-#		x2 = input("Em qual posicao x o navio termina? Digite um numero de 0 a "+str(tam_tabuleiro-1)+"\n");		
-#		y2 = input("Em qual posicao y o navio termina? Digite um numero de 0 a "+str(tam_tabuleiro-1)+"\n");
+	while True:
+		x1 = input("Em qual posicao x o navio comeca? Digite um numero de 0 a "+str(tam_tabuleiro-1)+"\n");		
+		y1 = input("Em qual posicao y o navio comeca? Digite um numero de 0 a "+str(tam_tabuleiro-1)+"\n");	
+		x2 = input("Em qual posicao x o navio termina? Digite um numero de 0 a "+str(tam_tabuleiro-1)+"\n");		
+		y2 = input("Em qual posicao y o navio termina? Digite um numero de 0 a "+str(tam_tabuleiro-1)+"\n");
 		
 		#TODO conferir se essa posicao vai se sobrepor a outro navio
 
 		#conferindo se navio fica dentro do tabuleiro
-#		if((x1 >= 0) and (x1 < tam_tabuleiro) and (x2 >= 0) and (x2 < tam_tabuleiro) and (y1 >=0) and (y1 <= tam_tabuleiro) and (y2 >= 0) and (y2 <= tam_tabuleiro)):
+		if((x1 >= 0) and (x1 < tam_tabuleiro) and (x2 >= 0) and (x2 < tam_tabuleiro) and (y1 >=0) and (y1 <= tam_tabuleiro) and (y2 >= 0) and (y2 <= tam_tabuleiro)):
 			#conferindo se tamanho do navio realmente eh do tamanho escolhido
-#			if(((math.fabs(y1-y2) != tam) and (math.fabs(x1-x2) != 0)) != ((math.fabs(y1-y2) != 0) and (math.fabs(x1-x2) != tam))):
-#				adicionaNavio(x1, y1, x2, y2, tabuleiro, tam_tabuleiro)
-#				imprimeTabuleiro(tabuleiro, tam_tabuleiro)
-#				break
-#		print("O tamanho do navio nao corresponde as posicoes escolhidas ou as posicoes nao respeitam o tabuleiro");
+			if(((math.fabs(y1-y2) != tam) and (math.fabs(x1-x2) != 0)) != ((math.fabs(y1-y2) != 0) and (math.fabs(x1-x2) != tam))):
+				adicionaNavio(x1, y1, x2, y2, tabuleiro, tam_tabuleiro, navio)
+				imprimeTabuleiro(tabuleiro, tam_tabuleiro)
+				break
+		print("O tamanho do navio nao corresponde as posicoes escolhidas ou as posicoes nao respeitam o tabuleiro");
 		
 udp_port = input("Qual sera o port utilizado?\n")
 udp_ip1 = raw_input("Qual o IP desta maquina?\n")
@@ -108,15 +111,23 @@ sock.bind(('', udp_port))
 
 #Se for o primeiro a jogar, envia primeiro ataque
 if(ordem == 1):
-	enviaAtaque(sock, udp_port, udp_ip2)
+	enviaAtaque(sock, udp_port, udp_ip2, ordem)
+	repassaBastao(sock, udp_port, udp_ip2)
 
 #loop de aguardo de mensagem
 while True:
 	#Recebe mensagem
 	mensagem, addr = sock.recvfrom(TAM_MSG)
-	#TODO tirar esse print daqui depois
-	print ("a mensagem recebida foi: " + mensagem)
-		#Se mensagem eh bastao, realiza/envia ataque e repassa bastao
+	if(addr != udp_ip3):
+		print ("a mensagem recebida foi: " + mensagem)
+		#Dividindo a mensagem em partes
+		partes = mensagem.split("_")
+
+		#Se mensagem eh bastao, o primeiro elemento sera 0, realiza/envia ataque e repassa bastao
+		if(partes[0] == 0):
+			enviaAtaque(sock, udp_port, udp_ip2, ordem)
+			repassaBastao(sock, udp_port, udp_ip2)
+		
 		#Se mensagem eh para este jogador
 			#Se ataque acertou um navio nao-completamente ou errou, 
 				#Retira mensagem recebida e envia resultado ao atacante
