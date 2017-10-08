@@ -45,9 +45,9 @@ def adicionaNavio(x1, y1, x2, y2, tabuleiro, tamanho, navio):
 	return
 
 def geraAtaque(atacante):
-	jogador = input("Qual jogador voce quer atacar?")
-	x = input("Qual a posicao x que voce quer atacar?")
-	y = input("Qual a posicao y que voce quer atacar?")
+	jogador = input("Qual jogador voce quer atacar?\n")
+	x = input("Qual a posicao x que voce quer atacar?\n")
+	y = input("Qual a posicao y que voce quer atacar?\n")
 	# Empacota mensagem de ataque
 	# O 1 representa ataque, o atacante eh este jogador, 
 	# o 'jogador' eh o atacado, x e y sao as posicoes do ataque
@@ -56,6 +56,7 @@ def geraAtaque(atacante):
 
 def enviaMensagem(mensagens, sock, udp_ip, udp_port):
 	msg = '.'.join(mensagens)
+	print("enviando mensagem"
 	sock.sendto(msg, (udp_ip, udp_port))
 	return
 
@@ -129,6 +130,7 @@ if(ordem == 1):
 while True:
 	#Recebe mensagens
 	mensagensRec, addr = sock.recvfrom(TAM_MSG)
+	print("recebi mensagem")
 	if(addr == udp_ip3):
 		mensagens = mensagensRec.split('.')
 		#Iterando pelas mensagens
