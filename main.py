@@ -134,6 +134,8 @@ while True:
 			partes = msg.split("_")
 			print(partes)
 			#Se mensagem eh para este jogador
+			else if(partes[2] == ordem):
+				print("mensagem enviada para este jogador")
 				#Se ataque acertou um navio nao-completamente ou errou, 
 					#Retira mensagem recebida e adiciona resultado ao atacante as msgs
 				#Se afundou navio completamente, 
@@ -143,9 +145,13 @@ while True:
 			
 			#Se mensagem eh aberta: aviso de que afundou navio de outro jogador
 			#(e/ou saiu do jogo) que nao foi atacado por este,
+			else if(partes[2] == 5):
+				print("mensagem aberta")
 				#le e repassa mensagem			
 
 			#Se mensagem foi enviada por este mesmo jogador
+			else if(partes[1] == ordem):
+				print("mensagem enviada por este jogador")
 				#Se mensagem eh aviso de que afundou navio do atacado ou que atacado saiu do jogo, 
 					#retira mensagem, cria mensagem aberta a todos e envia mensagem
 				#Se foi mensagem aberta de navio afundado ou jogador saiu do jogo de outro jogador, 
@@ -153,7 +159,9 @@ while True:
 				#Se foi mensagem de ataque, ERRO, a mensagem nao chegou ao remetente
 				#Se foi mensagem de que atacante acertou este jogador, ERRO, a msg nao chegou no remetente
 			#Se mensagem nao eh para este nem enviada por este, repassa para frente
-		
+			else if(partes[0] != 9):
+				print("mensagem nao eh para este")
 			#Se mensagem eh bastao, o primeiro elemento sera 9, realiza ataque
-
+			else:
+				print("bastao")
 		# repassa bastao com mensagens
