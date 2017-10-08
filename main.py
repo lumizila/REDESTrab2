@@ -51,11 +51,12 @@ def geraAtaque(atacante):
 	# Empacota mensagem de ataque
 	# O 1 representa ataque, o atacante eh este jogador, 
 	# o 'jogador' eh o atacado, x e y sao as posicoes do ataque
-	mensagem = "1_"+atacante+"_"+jogador+"_"+x+"_"+y
+	mensagem = "1_"+str(atacante)+"_"+str(jogador)+"_"+str(x)+"_"+str(y)
 	return mensagem
 
 def enviaMensagem(mensagens, sock, udp_ip, udp_port):
-	sock.sendto(mensagens, (udp_ip, udp_port))
+	msg = '.'.join(mensagens)
+	sock.sendto(msg, (udp_ip, udp_port))
 	return
 
 print ("inicio do programa...")
@@ -115,6 +116,8 @@ sock.bind(('', udp_port))
 #Lista de mensagens a enviar no anel
 mensagens = []
 
+mensagensEnviar = []
+
 #Se for o primeiro a jogar, envia primeiro ataque
 if(ordem == 1):
 	#Adicionando bastao as mensagens
@@ -127,8 +130,9 @@ while True:
 	#Recebe mensagens
 	mensagensRec, addr = sock.recvfrom(TAM_MSG)
 	if(addr == udp_ip3):
+		mensagens = mensagensRec.split('.')
 		#Iterando pelas mensagens
-		for msg in mensagensRec:
+		for msg in mensagens:
 			print ("a mensagem recebida foi: " + msg)
 			#Dividindo cada parte da mensagem
 			partes = msg.split("_")
