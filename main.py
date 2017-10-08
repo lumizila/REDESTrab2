@@ -56,7 +56,7 @@ def geraAtaque(atacante):
 
 def enviaMensagem(mensagens, sock, udp_ip, udp_port):
 	msg = '.'.join(mensagens)
-	print("enviando mensagem"
+	print("enviando mensagem")
 	sock.sendto(msg, (udp_ip, udp_port))
 	return
 
