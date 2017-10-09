@@ -1,4 +1,27 @@
 #!/usr/bin/python
+
+#PROTOCOLO DAS MENSAGENS:
+
+#Formato da mensagem: [TIPO]_[QUEM ENVIOU]_[PARA QUEM ENVIOU]_[POSICAO X]_[POSICAO Y]
+
+#Tipo pode ser:
+#	9 = bastao
+#	1 = ataque
+#	2 = navio afundou
+#	3 = jogador perdeu
+#	4 = ataque acertou, mas navio nao afundou
+#	5 = ataque errou
+#	6 = mensagem aberta de que navio afundou
+#	7 = mensagem aberta de que jogador perdeu
+
+#Quem enviou pode ser: 
+#	1,2,3,4 = jogador de numero x
+
+#Para quem enviou pode ser:
+#	1,2,3,4 = jogador de numero x
+
+#Posicao x e posicao y representam a posicao de ataque de um navio
+
 import sys
 import math
 import socket
@@ -54,11 +77,24 @@ def geraAtaque(atacante):
 	mensagem = "1_"+str(atacante)+"_"+str(jogador)+"_"+str(x)+"_"+str(y)
 	return mensagem
 
+#Agrupa as mensagens em uma so para poder enviar
 def enviaMensagem(mensagens, sock, udp_ip, udp_port):
 	msg = '.'.join(mensagens)
 	print("enviando mensagem")
 	sock.sendto(msg, (udp_ip, udp_port))
 	return
+
+#Traduz a mensagem para poder printar para o usuario
+def leMensagem(partes):
+	if(partes[2] == '5'):
+		if(partes[0] == '2'):
+			print("O navio do jogador "+partes[1]+" afundou.")
+		elif(partes[0] == '3'):
+			print("O jogador "+partes[1]+" perdeu e saiu do jogo")
+		else:
+			print("Erro: Mensagem não conhecida.")	
+	else:
+		print("Erro: Mensagem não conhecida.")	
 
 #Conferir se essa posicao vai se sobrepor a outro navio
 def checaSobreposicao(tabuleiro, tamanho, x1, x2, y1, y2):
@@ -86,6 +122,31 @@ def checaSobreposicao(tabuleiro, tamanho, x1, x2, y1, y2):
 	if(sobrepoe == True):
 		print("Erro: Este navio se sobrepoe a outro")	
 	return sobrepoe
+
+#Checa mensagem de ataque, atualiza tabuleiro e variaveis e retorna resultado
+def checaAtaque(partes, tabuleiro, tamanho, num_navios):
+	x = partes[3]
+	y = partes[4]
+	if(tabuleiro[x*tamanho+y] == "--"):
+		return "errou"
+	else:	
+		navio = tabuleiro[x*tamanho+y]
+		
+		#realiza ataque
+		tabuleiro[x*tamanho+y] = "--"
+
+		for linha in range(tamanho):
+			for coluna in range(tamanho):
+				#Testa se navio nao afundou totalmente
+				if(tabuleiro[x*tamanho+y] == navio):
+					return "acertou"
+				#Testa se afundou navio
+				elif(tabuleiro[x*tamanho+y] != "--"):
+					num_navios = num_navios -1
+					return "afundou"
+		#Se a funcao nao retornou ate agora, significa que jogador perdeu
+		return "perdeu"	
+	 
 
 #TODO como implementar timeout ?
 #TODO arrumar este tamanho
@@ -171,44 +232,75 @@ while True:
 		#Iterando pelas mensagens
 		for msg in mensagens:
 			print ("a mensagem recebida foi: " + msg)
+
 			#Dividindo cada parte da mensagem
 			partes = msg.split("_")
 			print(partes)
+
 			#Se mensagem eh para este jogador
 			if(partes[2] == str(ordem)):
-				print("mensagem enviada para este jogador")
-				#Se ataque acertou um navio nao-completamente ou errou, 
-					#Retira mensagem recebida e adiciona resultado ao atacante as msgs
-				#Se afundou navio completamente, 
-					#Retira mensagem recebida e adiciona resultado ao atacante as msgs
-				#Se todos os navios afundaram, 
-					#Retira mensagem recebida e avisa que perdeu ao atacante e sai do jogo(e do loop)
-			
+				#Se eh uma mensagem de ataque
+				if(partes[0] == '1'):
+					ataque = checaAtaque(partes, tabuleiro, tam_tabuleiro, num_navios) 
+				
+					#Se ataque acertou um navio nao-completamente ou errou,
+					if(ataque == 'acertou'):
+						#Retira mensagem recebida e adiciona resultado ao atacante as msgs
+						mensagensEnviar.append("4_"+str(ordem)+"_"+partes[1]+"_"+partes[3]+"_"+partes[4])
+					#Se ataque errou
+					elif(ataque == 'errou'):
+						#Retira mensagem recebida e adiciona resultado ao atacante as msgs
+						mensagensEnviar.append("5_"+str(ordem)+"_"+partes[1]+"_"+partes[3]+"_"+partes[4])
+					#Se afundou navio completamente, 
+					elif(ataque == 'afundou'):
+						#Retira mensagem recebida e adiciona resultado ao atacante as msgs
+						mensagensEnviar.append("2_"+str(ordem)+"_"+partes[1]+"_"+partes[3]+"_"+partes[4])
+					#Se todos os navios afundaram, 
+					elif(ataque == 'perdeu'):
+						#Retira mensagem recebida e avisa que perdeu ao atacante e sai do jogo(e do loop)
+						mensagensEnviar.append("3_"+str(ordem)+"_"+partes[1]+"_"+partes[3]+"_"+partes[4])
+						#TODO tirar jogador do jogo na proxima jogada
+
 			#Se mensagem eh aberta: aviso de que afundou navio de outro jogador
 			#(e/ou saiu do jogo) que nao foi atacado por este,
-			elif(partes[2] == '5'):
-				print("mensagem aberta")
-				#le e repassa mensagem			
-
+			elif(partes[0] == '6' or partes[0] == '7'):
+				#le e repassa mensagem
+				leMensagem(partes)
+				mensagensEnviar.append(msg)			
+			
 			#Se mensagem foi enviada por este mesmo jogador
 			elif(partes[1] == str(ordem)):
-				print("mensagem enviada por este jogador")
-				#Se mensagem eh aviso de que afundou navio do atacado ou que atacado saiu do jogo, 
+				#Se mensagem eh aviso de que afundou navio do atacado 
+				if(partes[0] == '2'):
 					#retira mensagem, cria mensagem aberta a todos e envia mensagem
+					mensagensEnviar.append("6_"+str(ordem)+"_"+partes[1]+"_"+partes[3]+"_"+partes[4])		
+				
+				#Se mensagem eh aviso que jogador saiu do jogo			
+				if(partes[0] == '3'):
+					#retira mensagem, cria mensagem aberta a todos e envia mensagem
+					mensagensEnviar.append("7_"+str(ordem)+"_"+partes[1]+"_"+partes[3]+"_"+partes[4])
+				
 				#Se foi mensagem aberta de navio afundado ou jogador saiu do jogo de outro jogador, 
-					#retira mensagem do anel
-				#Se foi mensagem de ataque, ERRO, a mensagem nao chegou ao remetente
+				if(partes[0] == '6' or partes[0] == '7'): 
+					#retira mensagem do anel(soh nao repassar nada)
+					print("Retirando mensagem: "+msg+" do anel")
+
+				#Se foi mensagem de ataque, ERRO, a mensagem nao chegou ao remetente	
 				#Se foi mensagem de que atacante acertou este jogador, ERRO, a msg nao chegou no remetente
+				if(partes[0] == '1' or partes[0] == '2' or partes[0] == '3' or partes[0] == '4' or partes[0] == '5'):
+					mensagensEnviar.append(msg);
+
 			#Se mensagem nao eh para este nem enviada por este, repassa para frente
 			elif(partes[0] != '9'):
-				print("mensagem nao eh para este")
+				mensagensEnviar.append(msg)				
+
 			#Se mensagem eh bastao, o primeiro elemento sera 9, realiza ataque
 			elif(partes[0] == '9'):
 				bastao = True
 				mensagensEnviar.append("9_9_9_9_9")
-				print("bastao")
+				mensagensEnviar.append(geraAtaque(ordem))
 			else:
-				print("Erro, mensagem nao conhecida")
+				print("Erro: mensagem "+msg+" nao eh conhecida")
 
 		# repassa bastao com mensagens
 		if(bastao == True):
