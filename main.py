@@ -60,7 +60,33 @@ def enviaMensagem(mensagens, sock, udp_ip, udp_port):
 	sock.sendto(msg, (udp_ip, udp_port))
 	return
 
-print ("inicio do programa...")
+#Conferir se essa posicao vai se sobrepor a outro navio
+def checaSobreposicao(tabuleiro, tamanho, x1, x2, y1, y2):
+	sobrepoe = False
+	if(x1 < x2):
+		for x in range(x1, x2+1):
+			if(y1 < y2):
+				for y in range(y1, y2+1):
+					if(tabuleiro[x*tamanho+y] != "--"):
+						sobrepoe = True
+			else:
+				for y in range(y2, y1+1):
+					if(tabuleiro[x*tamanho+y] != "--"):
+						sobrepoe = True
+	else:
+		for x in range(x2, x1+1):
+			if(y1 < y2):
+				for y in range(y1, y2+1):
+					if(tabuleiro[x*tamanho+y] != "--"):
+						sobrepoe = True
+			else:
+				for y in range(y2, y1+1):
+					if(tabuleiro[x*tamanho+y] != "--"):
+						sobrepoe = True
+	if(sobrepoe == True):
+		print("Erro: Este navio se sobrepoe a outro")	
+	return sobrepoe
+
 #TODO como implementar timeout ?
 #TODO arrumar este tamanho
 TAM_MSG = 1024
@@ -93,16 +119,16 @@ for navio in range(num_navios):
 		x2 = input("Em qual posicao x o navio termina? Digite um numero de 0 a "+str(tam_tabuleiro-1)+"\n");		
 		y2 = input("Em qual posicao y o navio termina? Digite um numero de 0 a "+str(tam_tabuleiro-1)+"\n");
 		
-		#TODO conferir se essa posicao vai se sobrepor a outro navio
-
+		sobrepoe = checaSobreposicao(tabuleiro, tam_tabuleiro, x1, x2, y1, y2)
+		
 		#conferindo se navio fica dentro do tabuleiro
-		if((x1 >= 0) and (x1 < tam_tabuleiro) and (x2 >= 0) and (x2 < tam_tabuleiro) and (y1 >=0) and (y1 <= tam_tabuleiro) and (y2 >= 0) and (y2 <= tam_tabuleiro)):
+		if((sobrepoe == False) and (x1 >= 0) and (x1 < tam_tabuleiro) and (x2 >= 0) and (x2 < tam_tabuleiro) and (y1 >=0) and (y1 <= tam_tabuleiro) and (y2 >= 0) and (y2 <= tam_tabuleiro)):
 			#conferindo se tamanho do navio realmente eh do tamanho escolhido
 			if(((math.fabs(y1-y2) != tam) and (math.fabs(x1-x2) != 0)) != ((math.fabs(y1-y2) != 0) and (math.fabs(x1-x2) != tam))):
 				adicionaNavio(x1, y1, x2, y2, tabuleiro, tam_tabuleiro, navio)
 				imprimeTabuleiro(tabuleiro, tam_tabuleiro)
 				break
-		print("O tamanho do navio nao corresponde as posicoes escolhidas ou as posicoes nao respeitam o tabuleiro");
+		print("Erro: O tamanho do navio nao corresponde as posicoes escolhidas ou as posicoes nao respeitam o tabuleiro");
 		
 udp_port = input("Qual sera o port utilizado?\n")
 udp_ip1 = raw_input("Qual o IP desta maquina?\n")
@@ -114,10 +140,15 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 #Liga o socket com a maquina que vai enviar para esta
 sock.bind(('', udp_port))
 
-#Lista de mensagens a enviar no anel
-mensagens = []
 
+#Lista de mensagens a enviar no anel
 mensagensEnviar = []
+
+#Lista de mensagens recebidas do anel
+mensagensRec = []
+
+#Mensagens separadas para poder operar sobre elas.
+mensagens = []
 
 #Se for o primeiro a jogar, envia primeiro ataque
 if(ordem == 1):
@@ -128,11 +159,13 @@ if(ordem == 1):
 
 #loop de aguardo de mensagem
 while True:
+	#limpando as variaveis
+	bastao = False
+	del mensagensEnviar[:]
+
 	#Recebe mensagens
 	mensagensRec, addr = sock.recvfrom(TAM_MSG)
-	print("recebi mensagem")
 	print(mensagensRec)
-	print(addr)
 	if(addr[0] == udp_ip3):
 		mensagens = mensagensRec.split('.')
 		#Iterando pelas mensagens
@@ -141,9 +174,6 @@ while True:
 			#Dividindo cada parte da mensagem
 			partes = msg.split("_")
 			print(partes)
-			print(type(ordem))
-			print(ordem)
-			print(partes[2])
 			#Se mensagem eh para este jogador
 			if(partes[2] == str(ordem)):
 				print("mensagem enviada para este jogador")
@@ -173,6 +203,14 @@ while True:
 			elif(partes[0] != '9'):
 				print("mensagem nao eh para este")
 			#Se mensagem eh bastao, o primeiro elemento sera 9, realiza ataque
-			else:
+			elif(partes[0] == '9'):
+				bastao = True
+				mensagensEnviar.append("9_9_9_9_9")
 				print("bastao")
+			else:
+				print("Erro, mensagem nao conhecida")
+
 		# repassa bastao com mensagens
+		if(bastao == True):
+			enviaMensagem(mensagensEnviar, sock, udp_ip2, udp_port)
+
