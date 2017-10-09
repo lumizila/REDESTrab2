@@ -131,7 +131,9 @@ while True:
 	#Recebe mensagens
 	mensagensRec, addr = sock.recvfrom(TAM_MSG)
 	print("recebi mensagem")
-	if(addr == udp_ip3):
+	print(mensagensRec)
+	print(addr)
+	if(addr[0] == udp_ip3):
 		mensagens = mensagensRec.split('.')
 		#Iterando pelas mensagens
 		for msg in mensagens:
@@ -139,8 +141,11 @@ while True:
 			#Dividindo cada parte da mensagem
 			partes = msg.split("_")
 			print(partes)
+			print(type(ordem))
+			print(ordem)
+			print(partes[2])
 			#Se mensagem eh para este jogador
-			if(partes[2] == ordem):
+			if(partes[2] == str(ordem)):
 				print("mensagem enviada para este jogador")
 				#Se ataque acertou um navio nao-completamente ou errou, 
 					#Retira mensagem recebida e adiciona resultado ao atacante as msgs
@@ -151,12 +156,12 @@ while True:
 			
 			#Se mensagem eh aberta: aviso de que afundou navio de outro jogador
 			#(e/ou saiu do jogo) que nao foi atacado por este,
-			elif(partes[2] == 5):
+			elif(partes[2] == '5'):
 				print("mensagem aberta")
 				#le e repassa mensagem			
 
 			#Se mensagem foi enviada por este mesmo jogador
-			elif(partes[1] == ordem):
+			elif(partes[1] == str(ordem)):
 				print("mensagem enviada por este jogador")
 				#Se mensagem eh aviso de que afundou navio do atacado ou que atacado saiu do jogo, 
 					#retira mensagem, cria mensagem aberta a todos e envia mensagem
@@ -165,7 +170,7 @@ while True:
 				#Se foi mensagem de ataque, ERRO, a mensagem nao chegou ao remetente
 				#Se foi mensagem de que atacante acertou este jogador, ERRO, a msg nao chegou no remetente
 			#Se mensagem nao eh para este nem enviada por este, repassa para frente
-			elif(partes[0] != 9):
+			elif(partes[0] != '9'):
 				print("mensagem nao eh para este")
 			#Se mensagem eh bastao, o primeiro elemento sera 9, realiza ataque
 			else:
