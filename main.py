@@ -2,10 +2,9 @@
 
 #PROTOCOLO DAS MENSAGENS:
 
-#Formato da mensagem: [TIPO]_[QUEM ENVIOU]_[PARA QUEM ENVIOU]_[POSICAO X]_[POSICAO Y]
+#Formato da mensagem: [TIPO]_[QUEM ENVIOU]_[PARA QUEM ENVIOU]_[POSICAO X]_[POSICAO Y]_[SITUACAO]
 
 #Tipo pode ser:
-#	9 = bastao
 #	1 = ataque
 #	2 = navio afundou
 #	3 = jogador perdeu
@@ -13,6 +12,7 @@
 #	5 = ataque errou
 #	6 = mensagem aberta de que navio afundou
 #	7 = mensagem aberta de que jogador perdeu
+#	9 = bastao
 
 #Quem enviou pode ser: 
 #	1,2,3,4 = jogador de numero x
@@ -21,6 +21,13 @@
 #	1,2,3,4 = jogador de numero x
 
 #Posicao x e posicao y representam a posicao de ataque de um navio
+
+#Dependendo da mensagem, ela deve ser lida por todos os jogadores(se for msg Tipo 6 ou 7)
+#Situacao indica:
+#	9 = NACK
+#	1 = ACK ou lido por 1 jogador
+#	2 = Lido por 2 jogadores
+#	3 = Lido por 3
 
 import sys
 import math
@@ -81,20 +88,21 @@ def geraAtaque(atacante):
 def enviaMensagem(mensagens, sock, udp_ip, udp_port):
 	msg = '.'.join(mensagens)
 	print("enviando mensagem")
-	sock.sendto(msg, (udp_ip, udp_port))
+	sock.sendto(msg, (udp_ip, udp_port))	
 	return
 
 #Traduz a mensagem para poder printar para o usuario
 def leMensagem(partes):
-	if(partes[2] == '5'):
-		if(partes[0] == '2'):
-			print("O navio do jogador "+partes[1]+" afundou.")
-		elif(partes[0] == '3'):
-			print("O jogador "+partes[1]+" perdeu e saiu do jogo")
-		else:
-			print("Erro: Mensagem não conhecida.")	
+	if(partes[0] == '2'):
+		print("O navio do jogador "+partes[1]+" afundou.")
+	elif(partes[0] == '3'):
+		print("O jogador "+partes[1]+" perdeu e saiu do jogo")
+	elif(partes[0] == '4'):
+		print("O navio do jogador "+partes[1]+" nao afundou, porem voce acertou as posicoes: x="+partes[3]+", y="+partes[4]+".")	
+	elif(partes[0] == '5'):
+		print("O ataque ao jogador "+partes[1]+ "nas posicoes : x="+partes[3]+", y="+partes[4]+ " errou.")
 	else:
-		print("Erro: Mensagem não conhecida.")	
+		print("Erro: Mensagem nao conhecida.")	
 
 #Conferir se essa posicao vai se sobrepor a outro navio
 def checaSobreposicao(tabuleiro, tamanho, x1, x2, y1, y2):
@@ -146,19 +154,18 @@ def checaAtaque(partes, tabuleiro, tamanho, num_navios):
 					return "afundou"
 		#Se a funcao nao retornou ate agora, significa que jogador perdeu
 		return "perdeu"	
-	 
 
-#TODO como implementar timeout ?
+#TODO como implementar timeout ? Acho que timeout vale caso demore muito para receber ack/nack
 #TODO arrumar este tamanho
 TAM_MSG = 1024
 
 #Pergunta a ordem que esse jogador vai jogar (se eh o primeiro ou nao)
 ordem = input("Qual eh a ordem que voce vai jogar? Responder: 1, 2, 3 ou 4\n")
 
-tam_tabuleiro = input("Qual o tamanho do tabuleiro?\n")
+tam_tabuleiro = input("Qual o tamanho do tabuleiro? ")
 
 #Le posicoes dos navios e quantidade deles
-num_navios = input("Quantos navios voce tera?\n")
+num_navios = input("Quantos navios voce tera? ")
 
 tam_navio = []
 tabuleiro = []
@@ -167,7 +174,7 @@ iniciaTabuleiro(tabuleiro, tam_tabuleiro);
 
 for navio in range(num_navios):
 	while True:
-		tam = input("Este eh o navio de numero "+str(navio)+", qual o tamanho dele?\n")
+		tam = input("Este eh o navio de numero "+str(navio)+", qual o tamanho dele? ")
 		if (tam <= tam_tabuleiro and tam > 0):
 			break
 		print("o tamanho do navio eh maior que o tamanho do tabuleiro ou eh < 1")
@@ -175,35 +182,38 @@ for navio in range(num_navios):
 	tam_navio.append(tam)
 	
 	while True:
-		x1 = input("Em qual posicao x o navio comeca? Digite um numero de 0 a "+str(tam_tabuleiro-1)+"\n");		
-		y1 = input("Em qual posicao y o navio comeca? Digite um numero de 0 a "+str(tam_tabuleiro-1)+"\n");	
-		x2 = input("Em qual posicao x o navio termina? Digite um numero de 0 a "+str(tam_tabuleiro-1)+"\n");		
-		y2 = input("Em qual posicao y o navio termina? Digite um numero de 0 a "+str(tam_tabuleiro-1)+"\n");
+		x1 = input("Em qual posicao x o navio comeca? Digite um numero de 0 a "+str(tam_tabuleiro-1)+": ");		
+		y1 = input("Em qual posicao y o navio comeca? Digite um numero de 0 a "+str(tam_tabuleiro-1)+": ");	
+		x2 = input("Em qual posicao x o navio termina? Digite um numero de 0 a "+str(tam_tabuleiro-1)+": ");		
+		y2 = input("Em qual posicao y o navio termina? Digite um numero de 0 a "+str(tam_tabuleiro-1)+": ");
 		
 		sobrepoe = checaSobreposicao(tabuleiro, tam_tabuleiro, x1, x2, y1, y2)
 		
 		#conferindo se navio fica dentro do tabuleiro
 		if((sobrepoe == False) and (x1 >= 0) and (x1 < tam_tabuleiro) and (x2 >= 0) and (x2 < tam_tabuleiro) and (y1 >=0) and (y1 <= tam_tabuleiro) and (y2 >= 0) and (y2 <= tam_tabuleiro)):
 			#conferindo se tamanho do navio realmente eh do tamanho escolhido
-			if(((math.fabs(y1-y2) != tam) and (math.fabs(x1-x2) != 0)) != ((math.fabs(y1-y2) != 0) and (math.fabs(x1-x2) != tam))):
+			if(((math.fabs(y1-y2) == 0) and (math.fabs(x1-x2) == (tam-1))) or ((math.fabs(y1-y2) == (tam-1)) and (math.fabs(x1-x2) == 0))):
 				adicionaNavio(x1, y1, x2, y2, tabuleiro, tam_tabuleiro, navio)
 				imprimeTabuleiro(tabuleiro, tam_tabuleiro)
 				break
 		print("Erro: O tamanho do navio nao corresponde as posicoes escolhidas ou as posicoes nao respeitam o tabuleiro");
 		
 udp_port = input("Qual sera o port utilizado?\n")
-udp_ip1 = raw_input("Qual o IP desta maquina?\n")
+#udp_ip1 = raw_input("Qual o IP desta maquina?\n")
 udp_ip2 = raw_input("Qual o IP da proxima maquina?\n") 
-udp_ip3 = raw_input("Qual o IP da maquina anterior?\n")
+#udp_ip3 = raw_input("Qual o IP da maquina anterior?\n")
 
 #Conecta socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
 #Liga o socket com a maquina que vai enviar para esta
 sock.bind(('', udp_port))
 
-
 #Lista de mensagens a enviar no anel
 mensagensEnviar = []
+
+#Lista de mensagens para repassar imediatamente, ja que nao sao para este jogador
+aRepassar = []
 
 #Lista de mensagens recebidas do anel
 mensagensRec = []
@@ -211,22 +221,23 @@ mensagensRec = []
 #Mensagens separadas para poder operar sobre elas.
 mensagens = []
 
+#Indica se ha bastao para poder enviar novas mensagens
+bastao = False
+
 #Se for o primeiro a jogar, envia primeiro ataque
 if(ordem == 1):
-	#Adicionando bastao as mensagens
-	mensagensEnviar.append("9_9_9_9_9")
+	#Adicionando bastao as mensagens	
 	mensagensEnviar.append(geraAtaque(ordem))
+	mensagensEnviar.append("9_9_9_9_9_9")
 	enviaMensagem(mensagensEnviar, sock, udp_ip2, udp_port)
+	del mensagensEnviar[:]
 
 #loop de aguardo de mensagem
 while True:
-	#limpando as variaveis
-	bastao = False
-	del mensagensEnviar[:]
-
 	#Recebe mensagens
 	mensagensRec, addr = sock.recvfrom(TAM_MSG)
 	print(mensagensRec)
+
 	if(addr[0] == udp_ip3):
 		mensagens = mensagensRec.split('.')
 		#Iterando pelas mensagens
@@ -235,74 +246,110 @@ while True:
 
 			#Dividindo cada parte da mensagem
 			partes = msg.split("_")
-			print(partes)
 
 			#Se mensagem eh para este jogador
 			if(partes[2] == str(ordem)):
+
+				#Se mensagem eh aviso de que afundou navio do atacado 
+				if(partes[0] == '2'):
+					#Marca mensagem recebida como lida/ACK
+					mensagensEnviar.append(partes[0]+"_"+partes[1]+"_"+partes[2]+"_"+partes[3]+"_"+partes[4]+"_1")
+					#Cria mensagem aberta a todos e envia mensagem
+					mensagensEnviar.append("6_"+str(ordem)+"_"+partes[1]+"_"+partes[3]+"_"+partes[4]+"_0")		
+					
+				#Se mensagem eh aviso que jogador saiu do jogo			
+				elif(partes[0] == '3'):
+					#Marca mensagem recebida como lida/ACK
+					mensagensEnviar.append(partes[0]+"_"+partes[1]+"_"+partes[2]+"_"+partes[3]+"_"+partes[4]+"_1")
+					#ACK mensagem, cria mensagem aberta a todos e envia mensagem
+					mensagensEnviar.append("7_"+str(ordem)+"_"+partes[1]+"_"+partes[3]+"_"+partes[4]+"_0")		
+
+				#Se eh mensagem de que ataque falhou ou acertou nao completamente
+				elif(partes[0] == '4' or partes[0] == 5):
+					#Marca mensagem recebida como lida/ACK
+					mensagensEnviar.append(partes[0]+"_"+partes[1]+"_"+partes[2]+"_"+partes[3]+"_"+partes[4]+"_1")
+					#Imprime mensagem na tela
+					leMensagem(partes)
+
 				#Se eh uma mensagem de ataque
-				if(partes[0] == '1'):
+				elif(partes[0] == '1'):
+					#Marca mensagem recebida como lida/ACK
+					mensagensEnviar.append(partes[0]+"_"+partes[1]+"_"+partes[2]+"_"+partes[3]+"_"+partes[4]+"_1")
 					ataque = checaAtaque(partes, tabuleiro, tam_tabuleiro, num_navios) 
-				
+					
 					#Se ataque acertou um navio nao-completamente ou errou,
 					if(ataque == 'acertou'):
-						#Retira mensagem recebida e adiciona resultado ao atacante as msgs
-						mensagensEnviar.append("4_"+str(ordem)+"_"+partes[1]+"_"+partes[3]+"_"+partes[4])
+						#adiciona resultado ao atacante as msgs 
+						mensagensEnviar.append("4_"+str(ordem)+"_"+partes[1]+"_"+partes[3]+"_"+partes[4]+"_0")
+
 					#Se ataque errou
 					elif(ataque == 'errou'):
-						#Retira mensagem recebida e adiciona resultado ao atacante as msgs
-						mensagensEnviar.append("5_"+str(ordem)+"_"+partes[1]+"_"+partes[3]+"_"+partes[4])
+						#adiciona resultado ao atacante as msgs e um ACK
+						mensagensEnviar.append("5_"+str(ordem)+"_"+partes[1]+"_"+partes[3]+"_"+partes[4]+"_0")
+
 					#Se afundou navio completamente, 
 					elif(ataque == 'afundou'):
-						#Retira mensagem recebida e adiciona resultado ao atacante as msgs
-						mensagensEnviar.append("2_"+str(ordem)+"_"+partes[1]+"_"+partes[3]+"_"+partes[4])
+						#Retira mensagem recebida e adiciona resultado ao atacante as msgs como um ACK
+						mensagensEnviar.append("2_"+str(ordem)+"_"+partes[1]+"_"+partes[3]+"_"+partes[4]+"_0")
 					#Se todos os navios afundaram, 
 					elif(ataque == 'perdeu'):
-						#Retira mensagem recebida e avisa que perdeu ao atacante e sai do jogo(e do loop)
-						mensagensEnviar.append("3_"+str(ordem)+"_"+partes[1]+"_"+partes[3]+"_"+partes[4])
-						#TODO tirar jogador do jogo na proxima jogada
+						#Avisa que perdeu atacante e sai do jogo(e do loop)
+						mensagensEnviar.append("3_"+str(ordem)+"_"+partes[1]+"_"+partes[3]+"_"+partes[4]+"_0")
+						#TODO tirar jogador do jogo quando receber ack desta mensagem
+					
+					#TODO aguardar ACK de resposta ao ataque
+					#Se ACK demorar muito(timeout), enviar msg de novo
+				else:
+					#NACK
+					mensagensEnviar.append(partes[0]+"_"+str(ordem)+"_"+partes[1]+"_"+partes[3]+"_"+partes[4]+"_9") 
+
+			#Se mensagem foi enviada por este mesmo jogador
+			elif(partes[1] == str(ordem)):				
+				#Se foi mensagem aberta de navio afundado ou jogador saiu do jogo de outro jogador, 
+				if(partes[0] == '6' or partes[0] == '7'):
+					#Checa se todo mundo recebeu (se os 4 leram)
+					if(partes[5] == "3"):
+						leMensagem(partes)
+						#retira mensagem do anel
+						print("Retirando mensagem: "+msg+" do anel")
+					else:
+						#Passa mensagem de novo mas com "lido" = 0
+						mensagensEnviar.append(partes[0]+"_"+partes[1]+"_"+partes[2]+"_"+partes[3]+"_"+partes[4]+"_0")
+				#Se foi um ACK/NACK, retira mensagem de ACK/NACK
+				elif(partes[5] == '1' or partes[5] == '0'):
+					print("Retirando mensagem de ACK/NACK: "+msg+" do anel")
+					#TODO se foi um NACK tem que reenviar a mensagem referente ao NACK
+					#TODO se foi um ACK/NACK, retira mensagem do timeout
 
 			#Se mensagem eh aberta: aviso de que afundou navio de outro jogador
 			#(e/ou saiu do jogo) que nao foi atacado por este,
 			elif(partes[0] == '6' or partes[0] == '7'):
 				#le e repassa mensagem
-				leMensagem(partes)
-				mensagensEnviar.append(msg)			
+				leMensagem(partes)	
+				#adiciona lido deste jogador para esta mensagem
+				aRepassar.append(partes[0]+"_"+partes[1]+"_"+partes[2]+"_"+partes[3]+"_"+partes[4]+"_"+str(int(partes[5])+1))
+				enviaMensagem(aRepassar, sock, udp_ip2, udp_port)
+				del aRepassar[:]
 			
-			#Se mensagem foi enviada por este mesmo jogador
-			elif(partes[1] == str(ordem)):
-				#Se mensagem eh aviso de que afundou navio do atacado 
-				if(partes[0] == '2'):
-					#retira mensagem, cria mensagem aberta a todos e envia mensagem
-					mensagensEnviar.append("6_"+str(ordem)+"_"+partes[1]+"_"+partes[3]+"_"+partes[4])		
-				
-				#Se mensagem eh aviso que jogador saiu do jogo			
-				if(partes[0] == '3'):
-					#retira mensagem, cria mensagem aberta a todos e envia mensagem
-					mensagensEnviar.append("7_"+str(ordem)+"_"+partes[1]+"_"+partes[3]+"_"+partes[4])
-				
-				#Se foi mensagem aberta de navio afundado ou jogador saiu do jogo de outro jogador, 
-				if(partes[0] == '6' or partes[0] == '7'): 
-					#retira mensagem do anel(soh nao repassar nada)
-					print("Retirando mensagem: "+msg+" do anel")
-
-				#Se foi mensagem de ataque, ERRO, a mensagem nao chegou ao remetente	
-				#Se foi mensagem de que atacante acertou este jogador, ERRO, a msg nao chegou no remetente
-				if(partes[0] == '1' or partes[0] == '2' or partes[0] == '3' or partes[0] == '4' or partes[0] == '5'):
-					mensagensEnviar.append(msg);
-
-			#Se mensagem nao eh para este nem enviada por este, repassa para frente
+			#Se mensagem nao eh para este nem enviada por este e nao eh o bastao, repassa para frente
 			elif(partes[0] != '9'):
-				mensagensEnviar.append(msg)				
+				aRepassar.append(msg)
+				enviaMensagem(aRepassar, sock, udp_ip2, udp_port)
+				del aRepassar[:]
 
 			#Se mensagem eh bastao, o primeiro elemento sera 9, realiza ataque
 			elif(partes[0] == '9'):
 				bastao = True
-				mensagensEnviar.append("9_9_9_9_9")
+				mensagensEnviar.append("9_9_9_9_9_9")
 				mensagensEnviar.append(geraAtaque(ordem))
+				#TODO timeout de ack de ataque
 			else:
 				print("Erro: mensagem "+msg+" nao eh conhecida")
 
 		# repassa bastao com mensagens
 		if(bastao == True):
 			enviaMensagem(mensagensEnviar, sock, udp_ip2, udp_port)
-
+			#limpando as variaveis
+			bastao = False
+			del mensagensEnviar[:]
+			
