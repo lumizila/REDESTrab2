@@ -256,13 +256,15 @@ while True:
 					mensagensEnviar.append(partes[0]+"_"+partes[1]+"_"+partes[2]+"_"+partes[3]+"_"+partes[4]+"_1")
 					#Cria mensagem aberta a todos e envia mensagem
 					mensagensEnviar.append("6_"+str(ordem)+"_"+partes[1]+"_"+partes[3]+"_"+partes[4]+"_0")		
-					
+					#TODO COLOCAR NO TIMEOUT	
+
 				#Se mensagem eh aviso que jogador saiu do jogo			
 				elif(partes[0] == '3'):
 					#Marca mensagem recebida como lida/ACK
 					mensagensEnviar.append(partes[0]+"_"+partes[1]+"_"+partes[2]+"_"+partes[3]+"_"+partes[4]+"_1")
 					#ACK mensagem, cria mensagem aberta a todos e envia mensagem
 					mensagensEnviar.append("7_"+str(ordem)+"_"+partes[1]+"_"+partes[3]+"_"+partes[4]+"_0")		
+					#TODO COLOCAR NO TIMEOUT	
 
 				#Se eh mensagem de que ataque falhou ou acertou nao completamente
 				elif(partes[0] == '4' or partes[0] == 5):
@@ -281,24 +283,27 @@ while True:
 					if(ataque == 'acertou'):
 						#adiciona resultado ao atacante as msgs 
 						mensagensEnviar.append("4_"+str(ordem)+"_"+partes[1]+"_"+partes[3]+"_"+partes[4]+"_0")
+						#TODO COLOCAR NO TIMEOUT	
 
 					#Se ataque errou
 					elif(ataque == 'errou'):
 						#adiciona resultado ao atacante as msgs e um ACK
 						mensagensEnviar.append("5_"+str(ordem)+"_"+partes[1]+"_"+partes[3]+"_"+partes[4]+"_0")
+						#TODO COLOCAR NO TIMEOUT	
 
 					#Se afundou navio completamente, 
 					elif(ataque == 'afundou'):
 						#Retira mensagem recebida e adiciona resultado ao atacante as msgs como um ACK
 						mensagensEnviar.append("2_"+str(ordem)+"_"+partes[1]+"_"+partes[3]+"_"+partes[4]+"_0")
+						#TODO COLOCAR NO TIMEOUT	
+
 					#Se todos os navios afundaram, 
 					elif(ataque == 'perdeu'):
 						#Avisa que perdeu atacante e sai do jogo(e do loop)
 						mensagensEnviar.append("3_"+str(ordem)+"_"+partes[1]+"_"+partes[3]+"_"+partes[4]+"_0")
+						#TODO COLOCAR NO TIMEOUT	
 						#TODO tirar jogador do jogo quando receber ack desta mensagem
 					
-					#TODO aguardar ACK de resposta ao ataque
-					#Se ACK demorar muito(timeout), enviar msg de novo
 				else:
 					#NACK
 					mensagensEnviar.append(partes[0]+"_"+str(ordem)+"_"+partes[1]+"_"+partes[3]+"_"+partes[4]+"_9") 
@@ -320,6 +325,7 @@ while True:
 					print("Retirando mensagem de ACK/NACK: "+msg+" do anel")
 					#TODO se foi um NACK tem que reenviar a mensagem referente ao NACK
 					#TODO se foi um ACK/NACK, retira mensagem do timeout
+				#TODO retira mensagem do timeout
 
 			#Se mensagem eh aberta: aviso de que afundou navio de outro jogador
 			#(e/ou saiu do jogo) que nao foi atacado por este,
