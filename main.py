@@ -164,6 +164,11 @@ def checaAtaque(partes, tabuleiro, tamanho):
 		return "perdeu"	
 
 def addTimeout(time, msg, listaTimeout):
+	#Checar se msg ja esta na lista do timeout
+	for el in listaTimeout:
+		if el[1] == msg:
+			el[0] = time
+			return		
 	aux = []
 	aux.append(time)
 	aux.append(msg)
@@ -185,15 +190,15 @@ def addMsg(lista, msg):
 	lista.append(msg)
 	return
 
-def checaTimeouts(listaTimeout, mensagensEnviar):
+def checaTimeouts(timeout, listaTimeout, mensagensEnviar):
 	#Checa os timeouts
 	aux = listaTimeout[:]
-#	print(mensagensEnviar)
-#	print(aux)
+	print(mensagensEnviar)
+	print(aux)
 	for row in aux:
 		agora = time.time()
-		if (row[0] > agora): #timeout!
-			addTimeout(agora+TIMEOUT, row[1], listaTimeout) 
+		if (row[0] < agora): #timeout!
+			addTimeout(agora+timeout, row[1], listaTimeout) 
 			addMsg(mensagensEnviar, row[1])
 
 def acabouJogo(jogadores):
@@ -205,10 +210,9 @@ def acabouJogo(jogadores):
 		return True
 	return False
 
-#TODO como implementar timeout ? Acho que timeout vale caso demore muito para receber ack/nack
 #TODO arrumar este tamanho
 TAM_MSG = 1024
-TIMEOUT = 1
+TIMEOUT = 4
 #Pergunta a ordem que esse jogador vai jogar (se eh o primeiro ou nao)
 ordem = input("Qual eh a ordem que voce vai jogar? Responder: 1, 2, 3 ou 4\n")
 
@@ -309,11 +313,20 @@ while True:
 	try:
 		mensagensRec, addr = sock.recvfrom(TAM_MSG)
 	except:
-		checaTimeouts(listaTimeout, mensagensEnviar)
+		#para poder matar o programa
+		time.sleep(0.1)
 
+		checaTimeouts(40, listaTimeout, mensagensEnviar)
+		if(mensagensEnviar != []):
+			enviaMensagem(mensagensEnviar, sock, udp_ip2, udp_port)
+			del mensagensEnviar[:]
+
+	
 	if(addr[0] == udp_ip3 and mensagensRec != []):	
 		print(mensagensRec)
 		mensagens = mensagensRec.split('.')
+		#limpando a string mensagensRec
+		del mensagensRec[:]
 		#Iterando pelas mensagens
 		for msg in mensagens:
 			print ("a mensagem recebida foi: " + msg)
@@ -327,7 +340,7 @@ while True:
 				#Se mensagem eh aviso de que afundou navio do atacado 
 				if(partes[0] == '2'):
 					#Marca mensagem recebida como lida/ACK
-					addMsg(mensagensEnviar, partes[0]+"_"+partes[1]+"_"+partes[2]+"_"+partes[3]+"_"+partes[4]+"_1")
+					addMsg(aRepassar, partes[0]+"_"+partes[1]+"_"+partes[2]+"_"+partes[3]+"_"+partes[4]+"_1")
 					#Cria mensagem aberta a todos e envia mensagem
 					addMsg(mensagensEnviar, "6_"+str(ordem)+"_"+partes[1]+"_"+partes[3]+"_"+partes[4]+"_0")		
 					addTimeout(time.time()+TIMEOUT, mensagensEnviar[-1], listaTimeout)	
@@ -335,7 +348,7 @@ while True:
 				#Se mensagem eh aviso que jogador saiu do jogo			
 				elif(partes[0] == '3'):
 					#Marca mensagem recebida como lida/ACK
-					addMsg(mensagensEnviar, partes[0]+"_"+partes[1]+"_"+partes[2]+"_"+partes[3]+"_"+partes[4]+"_1")
+					addMsg(aRepassar, partes[0]+"_"+partes[1]+"_"+partes[2]+"_"+partes[3]+"_"+partes[4]+"_1")
 					#ACK mensagem, cria mensagem aberta a todos e envia mensagem
 					addMsg(mensagensEnviar, "7_"+str(ordem)+"_"+partes[1]+"_"+partes[3]+"_"+partes[4]+"_0")		
 					addTimeout(time.time()+TIMEOUT, mensagensEnviar[-1], listaTimeout)	
@@ -344,16 +357,16 @@ while True:
 						jogadores[int(partes[1])] = 0
 
 				#Se eh mensagem de que ataque falhou ou acertou nao completamente
-				elif(partes[0] == '4' or partes[0] == 5):
+				elif(partes[0] == '4' or partes[0] == '5'):
 					#Marca mensagem recebida como lida/ACK
-					addMsg(mensagensEnviar, partes[0]+"_"+partes[1]+"_"+partes[2]+"_"+partes[3]+"_"+partes[4]+"_1")
+					addMsg(aRepassar, partes[0]+"_"+partes[1]+"_"+partes[2]+"_"+partes[3]+"_"+partes[4]+"_1")
 					#Imprime mensagem na tela
 					leMensagem(partes)
 
 				#Se eh uma mensagem de ataque
 				elif(partes[0] == '1'):
 					#Marca mensagem recebida como lida/ACK
-					addMsg(mensagensEnviar, partes[0]+"_"+partes[1]+"_"+partes[2]+"_"+partes[3]+"_"+partes[4]+"_1")
+					addMsg(aRepassar, partes[0]+"_"+partes[1]+"_"+partes[2]+"_"+partes[3]+"_"+partes[4]+"_1")
 					ataque = checaAtaque(partes, tabuleiro, tam_tabuleiro) 
 					print("O ataque recebido: "+ataque)
 					imprimeTabuleiro(tabuleiro, tam_tabuleiro)				
@@ -388,7 +401,11 @@ while True:
 					addTimeout(time.time()+TIMEOUT, mensagensEnviar[-1], listaTimeout)	
 				else:
 					#NACK
-					addMsg(mensagensEnviar, partes[0]+"_"+str(ordem)+"_"+partes[1]+"_"+partes[3]+"_"+partes[4]+"_9") 
+					addMsg(aRepassar, partes[0]+"_"+str(ordem)+"_"+partes[1]+"_"+partes[3]+"_"+partes[4]+"_9") 
+				
+				#Enviando os ACK/NACK		
+				enviaMensagem(aRepassar, sock, udp_ip2, udp_port)
+				del aRepassar[:]
 
 			#Se mensagem foi enviada por este mesmo jogador
 			elif(partes[1] == str(ordem)):				
@@ -401,8 +418,10 @@ while True:
 						print("Retirando mensagem: "+msg+" do anel")
 					else:
 						#Passa mensagem de novo mas com "lido" = 0
-						addMsg(mensagensEnviar, partes[0]+"_"+partes[1]+"_"+partes[2]+"_"+partes[3]+"_"+partes[4]+"_0")
+						addMsg(aRepassar, partes[0]+"_"+partes[1]+"_"+partes[2]+"_"+partes[3]+"_"+partes[4]+"_0")
 						addTimeout(time.time()+TIMEOUT, mensagensEnviar[-1], listaTimeout)	
+						enviaMensagem(aRepassar, sock, udp_ip2, udp_port)
+						del aRepassar[:]
 
 				#Se foi um ACK/NACK, retira mensagem de ACK/NACK
 				elif(partes[5] == '1' or partes[5] == '0'):
@@ -443,12 +462,13 @@ while True:
 		if(bastao == True):
 			addMsg(mensagensEnviar, "9_9_9_9_9_9")
 			
+			checaTimeouts(40, listaTimeout, mensagensEnviar)
+			
 			if(perdeu == 0):
 				ataque = geraAtaque(ordem)
 				addMsg(mensagensEnviar, ataque)
 				addTimeout(time.time()+TIMEOUT, ataque, listaTimeout)
 			
-			checaTimeouts(listaTimeout, mensagensEnviar)
 			enviaMensagem(mensagensEnviar, sock, udp_ip2, udp_port)
 			#limpando as variaveis
 			bastao = False
