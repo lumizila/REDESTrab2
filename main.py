@@ -187,16 +187,23 @@ def addMsg(lista, msg):
 
 def checaTimeouts(listaTimeout, mensagensEnviar):
 	#Checa os timeouts
-	#TODO BUG AQUI
 	aux = listaTimeout[:]
-	print(mensagensEnviar)
-	print(aux)
+#	print(mensagensEnviar)
+#	print(aux)
 	for row in aux:
 		agora = time.time()
 		if (row[0] > agora): #timeout!
 			addTimeout(agora+TIMEOUT, row[1], listaTimeout) 
 			addMsg(mensagensEnviar, row[1])
 
+def acabouJogo(jogadores):
+	num = 0
+	for el in jogadores:
+		if el == 1:
+			num = num + 1
+	if num < 2:
+		return True
+	return False
 
 #TODO como implementar timeout ? Acho que timeout vale caso demore muito para receber ack/nack
 #TODO arrumar este tamanho
@@ -252,6 +259,9 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 #Liga o socket com a maquina que vai enviar para esta
 sock.bind(('', udp_port))
 
+#Faz as operacoes do socket terem timeout de 1 segundo
+sock.settimeout(1)
+
 #Lista de mensagens a enviar no anel
 mensagensEnviar = []
 
@@ -275,6 +285,10 @@ jogadores = [1, 1, 1, 1];
 
 #indica se ja perdeu
 perdeu = 0;
+
+#endereco do remetente fica nesta lista
+addr = ['']
+
 #Se for o primeiro a jogar, envia primeiro ataque
 if(ordem == 1):
 	ataque = geraAtaque(ordem)
@@ -287,17 +301,21 @@ if(ordem == 1):
 
 #loop de aguardo de mensagem
 while True:
-	#Recebe mensagens
-	#TODO: nao deixar ficar travado nisso, precisa repassar as mensagens de timeout
-	mensagensRec, addr = sock.recvfrom(TAM_MSG)
-	print(mensagensRec)
-	checaTimeouts(listaTimeout, mensagensEnviar)
+	#tests if the game is over 
+	if(acabouJogo(jogadores)):
+		break
 
-	if(addr[0] == udp_ip3):
+	#Recebe mensagens
+	try:
+		mensagensRec, addr = sock.recvfrom(TAM_MSG)
+	except:
+		checaTimeouts(listaTimeout, mensagensEnviar)
+
+	if(addr[0] == udp_ip3 and mensagensRec != []):	
+		print(mensagensRec)
 		mensagens = mensagensRec.split('.')
 		#Iterando pelas mensagens
 		for msg in mensagens:
-
 			print ("a mensagem recebida foi: " + msg)
 
 			#Dividindo cada parte da mensagem
@@ -321,6 +339,9 @@ while True:
 					#ACK mensagem, cria mensagem aberta a todos e envia mensagem
 					addMsg(mensagensEnviar, "7_"+str(ordem)+"_"+partes[1]+"_"+partes[3]+"_"+partes[4]+"_0")		
 					addTimeout(time.time()+TIMEOUT, mensagensEnviar[-1], listaTimeout)	
+					#anotando que o jogador x perdeu
+					if(partes[0] == '7'):
+						jogadores[int(partes[1])] = 0
 
 				#Se eh mensagem de que ataque falhou ou acertou nao completamente
 				elif(partes[0] == '4' or partes[0] == 5):
@@ -396,6 +417,9 @@ while True:
 			#Se mensagem eh aberta: aviso de que afundou navio de outro jogador
 			#(e/ou saiu do jogo) que nao foi atacado por este,
 			elif(partes[0] == '6' or partes[0] == '7'):
+				#anotando que o jogador x perdeu
+				if(partes[0] == '7'):
+					jogadores[int(partes[2])] = 0
 				#le e repassa mensagem
 				leMensagem(partes)	
 				#adiciona lido deste jogador para esta mensagem
