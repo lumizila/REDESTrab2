@@ -300,6 +300,8 @@ if(ordem == 1):
 	addTimeout(time.time()+TIMEOUT, ataque, listaTimeout)
 	#Adicionando bastao as mensagens	
 	addMsg(mensagensEnviar, "9_9_9_9_9_9")
+	#TODO: ARRUMAR TIMEOUT DO BASTAO
+	addTimeout(time.time()+TIMEOUT, "9_9_9_9_9_9", listaTimeout)
 	enviaMensagem(mensagensEnviar, sock, udp_ip2, udp_port)
 	del mensagensEnviar[:]
 
@@ -322,11 +324,11 @@ while True:
 			del mensagensEnviar[:]
 
 	
-	if(addr[0] == udp_ip3 and mensagensRec != []):	
+	if(addr[0] == udp_ip3 and mensagensRec != ""):	
 		print(mensagensRec)
 		mensagens = mensagensRec.split('.')
 		#limpando a string mensagensRec
-		del mensagensRec[:]
+		mensagensRec = ""
 		#Iterando pelas mensagens
 		for msg in mensagens:
 			print ("a mensagem recebida foi: " + msg)
@@ -397,7 +399,6 @@ while True:
 						print("os jogadores agora sao:")
 						print(jogadores)
 						
-						#TODO testa se fim de jogo, e termina jogo
 					addTimeout(time.time()+TIMEOUT, mensagensEnviar[-1], listaTimeout)	
 				else:
 					#NACK
@@ -461,6 +462,8 @@ while True:
 		# repassa bastao com mensagens
 		if(bastao == True):
 			addMsg(mensagensEnviar, "9_9_9_9_9_9")
+			#TODO: ARRUMAR TIMEOUT DO BASTAO
+			addTimeout(time.time()+TIMEOUT, "9_9_9_9_9_9", listaTimeout)
 			
 			checaTimeouts(40, listaTimeout, mensagensEnviar)
 			
