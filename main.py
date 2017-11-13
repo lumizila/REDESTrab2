@@ -89,21 +89,25 @@ def geraAtaque(atacante):
 #Agrupa as mensagens em uma so para poder enviar
 def enviaMensagem(mensagens, sock, udp_ip, udp_port):
 	msg = '.'.join(mensagens)
-	print("enviando mensagem:")
-	print(msg)
+	#print("enviando mensagem:")
+	#print(msg)
 	sock.sendto(msg, (udp_ip, udp_port))	
 	return
 
 #Traduz a mensagem para poder printar para o usuario
 def leMensagem(partes):
 	if(partes[0] == '2'):
-		print("O navio do jogador "+partes[1]+" afundou.")
+		print("--> O navio do jogador "+partes[1]+" afundou.")
 	elif(partes[0] == '3'):
-		print("O jogador "+partes[1]+" perdeu e saiu do jogo")
+		print("--> O jogador "+partes[1]+" perdeu e saiu do jogo")
 	elif(partes[0] == '4'):
-		print("O navio do jogador "+partes[1]+" nao afundou, porem voce acertou as posicoes: x="+partes[3]+", y="+partes[4]+".")	
+		print("--> O navio do jogador "+partes[1]+" nao afundou, porem voce acertou as posicoes: x="+partes[3]+", y="+partes[4]+".")	
 	elif(partes[0] == '5'):
-		print("O ataque ao jogador "+partes[1]+ "nas posicoes : x="+partes[3]+", y="+partes[4]+ " errou.")
+		print("--> O ataque ao jogador "+partes[1]+" nas posicoes : x="+partes[3]+", y="+partes[4]+ " errou.")
+	elif(partes[0] == '6'): 
+		print("--> O jogador "+partes[2]+" teve um navio afundado.")
+	elif(partes[0] == '7'):
+		print("--> O jogador "+partes[2]+" perdeu o jogo.")
 	else:
 		print("Erro: Mensagem nao conhecida.")	
 
@@ -193,8 +197,8 @@ def addMsg(lista, msg):
 def checaTimeouts(timeout, listaTimeout, mensagensEnviar):
 	#Checa os timeouts
 	aux = listaTimeout[:]
-	print(mensagensEnviar)
-	print(aux)
+#	print(mensagensEnviar)
+#	print(aux)
 	for row in aux:
 		agora = time.time()
 		if (row[0] < agora): #timeout!
@@ -301,7 +305,7 @@ if(ordem == 1):
 	#Adicionando bastao as mensagens	
 	addMsg(mensagensEnviar, "9_9_9_9_9_9")
 	#TODO: ARRUMAR TIMEOUT DO BASTAO
-	addTimeout(time.time()+TIMEOUT, "9_9_9_9_9_9", listaTimeout)
+	#addTimeout(time.time()+TIMEOUT, "9_9_9_9_9_9", listaTimeout)
 	enviaMensagem(mensagensEnviar, sock, udp_ip2, udp_port)
 	del mensagensEnviar[:]
 
@@ -325,20 +329,45 @@ while True:
 
 	
 	if(addr[0] == udp_ip3 and mensagensRec != ""):	
-		print(mensagensRec)
+		#print(mensagensRec)
 		mensagens = mensagensRec.split('.')
 		#limpando a string mensagensRec
 		mensagensRec = ""
 		#Iterando pelas mensagens
 		for msg in mensagens:
-			print ("a mensagem recebida foi: " + msg)
+			#print ("a mensagem recebida foi: " + msg)
 
 			#Dividindo cada parte da mensagem
 			partes = msg.split("_")
+			
+			#Se mensagem foi enviada por este mesmo jogador
+			if(partes[1] == str(ordem)):				
+				#Se foi mensagem aberta de navio afundado ou jogador saiu do jogo de outro jogador, 
+				if(partes[0] == '6' or partes[0] == '7'):
+					#Checa se todo mundo recebeu (se os 4 leram)
+					if(partes[5] == "3"):
+						leMensagem(partes)
+						#retira mensagem do anel
+						print("Retirando mensagem: "+msg+" do anel")
+					else:
+						#Passa mensagem de novo mas com "lido" = 0
+						addMsg(aRepassar, partes[0]+"_"+partes[1]+"_"+partes[2]+"_"+partes[3]+"_"+partes[4]+"_0")
+						addTimeout(time.time()+TIMEOUT, mensagensEnviar[-1], listaTimeout)	
+						enviaMensagem(aRepassar, sock, udp_ip2, udp_port)
+						del aRepassar[:]
+
+				#Se foi um ACK/NACK, retira mensagem de ACK/NACK
+				elif(partes[5] == '1' or partes[5] == '0'):
+					print("Retirando mensagem de ACK/NACK: "+msg+" do anel")
+					#retira mensagem do timeout
+					delTimeout(msg, listaTimeout)
+					#Se foi um NACK tem que reenviar a mensagem referente ao NACK
+					if(partes[5] == "9"):
+						addMsg(mensagensEnviar, partes[0]+"_"+partes[1]+"_"+partes[2]+"_"+partes[3]+"_"+partes[4]+"_0")
+						addTimeout(time.time()+TIMEOUT, mensagensEnviar[-1], listaTimeout)	
 
 			#Se mensagem eh para este jogador
-			if(partes[2] == str(ordem)):
-
+			elif(partes[2] == str(ordem)):
 				#Se mensagem eh aviso de que afundou navio do atacado 
 				if(partes[0] == '2'):
 					#Marca mensagem recebida como lida/ACK
@@ -400,6 +429,8 @@ while True:
 						print(jogadores)
 						
 					addTimeout(time.time()+TIMEOUT, mensagensEnviar[-1], listaTimeout)	
+				elif(partes[0] == '7' or partes[0] == '6'):
+					addMsg(aRepassar, partes[0]+"_"+partes[1]+"_"+partes[2]+"_"+partes[3]+"_"+partes[4]+"_"+str(int(partes[5])+1))
 				else:
 					#NACK
 					addMsg(aRepassar, partes[0]+"_"+str(ordem)+"_"+partes[1]+"_"+partes[3]+"_"+partes[4]+"_9") 
@@ -408,32 +439,7 @@ while True:
 				enviaMensagem(aRepassar, sock, udp_ip2, udp_port)
 				del aRepassar[:]
 
-			#Se mensagem foi enviada por este mesmo jogador
-			elif(partes[1] == str(ordem)):				
-				#Se foi mensagem aberta de navio afundado ou jogador saiu do jogo de outro jogador, 
-				if(partes[0] == '6' or partes[0] == '7'):
-					#Checa se todo mundo recebeu (se os 4 leram)
-					if(partes[5] == "3"):
-						leMensagem(partes)
-						#retira mensagem do anel
-						print("Retirando mensagem: "+msg+" do anel")
-					else:
-						#Passa mensagem de novo mas com "lido" = 0
-						addMsg(aRepassar, partes[0]+"_"+partes[1]+"_"+partes[2]+"_"+partes[3]+"_"+partes[4]+"_0")
-						addTimeout(time.time()+TIMEOUT, mensagensEnviar[-1], listaTimeout)	
-						enviaMensagem(aRepassar, sock, udp_ip2, udp_port)
-						del aRepassar[:]
-
-				#Se foi um ACK/NACK, retira mensagem de ACK/NACK
-				elif(partes[5] == '1' or partes[5] == '0'):
-					print("Retirando mensagem de ACK/NACK: "+msg+" do anel")
-					#retira mensagem do timeout
-					delTimeout(msg, listaTimeout)
-					#Se foi um NACK tem que reenviar a mensagem referente ao NACK
-					if(partes[5] == "9"):
-						addMsg(mensagensEnviar, partes[0]+"_"+partes[1]+"_"+partes[2]+"_"+partes[3]+"_"+partes[4]+"_0")
-						addTimeout(time.time()+TIMEOUT, mensagensEnviar[-1], listaTimeout)	
-
+			
 			#Se mensagem eh aberta: aviso de que afundou navio de outro jogador
 			#(e/ou saiu do jogo) que nao foi atacado por este,
 			elif(partes[0] == '6' or partes[0] == '7'):
@@ -463,7 +469,7 @@ while True:
 		if(bastao == True):
 			addMsg(mensagensEnviar, "9_9_9_9_9_9")
 			#TODO: ARRUMAR TIMEOUT DO BASTAO
-			addTimeout(time.time()+TIMEOUT, "9_9_9_9_9_9", listaTimeout)
+			#addTimeout(time.time()+TIMEOUT, "9_9_9_9_9_9", listaTimeout)
 			
 			checaTimeouts(40, listaTimeout, mensagensEnviar)
 			
